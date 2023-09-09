@@ -20,6 +20,13 @@ display_usage() {
     echo ""
 }
 
+# Function to handle errors
+handle_error() {
+    local error_message="$1"
+    echo ""
+    echo "Error: $error_message"    
+}
+
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -36,7 +43,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --role)
-            duration="$2"
+            role_to_assume="$2"
             shift 2
             ;;
         --help)
@@ -45,7 +52,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Invalid argument: $1"
-            shift 1 
+            shift 1
             ;;
     esac
 done
@@ -69,6 +76,12 @@ fi
 credentials=$(aws sts assume-role --role-arn "arn:aws:iam::$account:role/$role_to_assume" \
     --role-session-name "AssumeSession" --profile "$profile" --duration-seconds "$duration")
 
+# Check if the assume-role command encountered an error
+if [ $? -ne 0 ]; then
+    handle_error "Failed to assume the role: $role_to_assume"
+    return
+fi
+
 # Extract the temporary credentials
 access_key=$(echo "$credentials" | jq -r '.Credentials.AccessKeyId')
 secret_key=$(echo "$credentials" | jq -r '.Credentials.SecretAccessKey')
@@ -79,3 +92,9 @@ export AWS_ACCESS_KEY_ID="$access_key"
 export AWS_SECRET_ACCESS_KEY="$secret_key"
 export AWS_SESSION_TOKEN="$session_token"
 export AWS_DEFAULT_REGION="$region"
+
+#Calculate duration in minutes
+duration_minutes=$(python -c "print('{:.2f}'.format($duration / 60))")
+
+echo ""
+echo "Successfully assumed the role $role_to_assume for a duration of $duration_minutes minutes."

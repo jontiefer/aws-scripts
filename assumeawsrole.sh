@@ -5,7 +5,20 @@
 # Initialize variables with default values
 profile="default"
 duration="900"  # Default duration is 15 minutes (900 seconds)
-role_to_assume="ServiceRole" # Default role name to assume
+role_to_assume="AdministratorRole" # Default role name to assume
+
+# Function to display usage information
+display_usage() {
+    echo "Usage: $0 --account <AWS_account_number> [--profile <AWS_profile>] [--duration <duration_in_seconds>] [--role <AWS_role>] [--help]"
+    echo ""
+    echo "Options:"
+    echo "  --account     AWS account number (required)"
+    echo "  --profile     AWS profile name (optional, default: 'default')"
+    echo "  --duration    Duration in seconds for temporary credentials (optional, default: 900)"
+    echo "  --role        The AWS role to assume for session (optional, default: AdministratorRole)"
+    echo "  --help        Display this usage information"
+    echo ""
+}
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -26,6 +39,10 @@ while [[ $# -gt 0 ]]; do
             duration="$2"
             shift 2
             ;;
+        --help)
+            display_usage
+            return
+            ;;
         *)
             echo "Invalid argument: $1"
             shift 1  # Shift by 1 to consume the invalid argument and continue            
@@ -36,6 +53,8 @@ done
 # Check if the required account parameter is provided
 if [ -z "$account" ]; then
     echo "Error: AWS Account Number parameter (account) is required."
+    echo ""
+    display_usage
     return
 fi
 

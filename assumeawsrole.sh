@@ -1,19 +1,43 @@
 #!/bin/bash
 
-# Usage: ./assume-administrator-role.sh [optional_profile_name]
+# Usage: ./assumeawsrole.sh --account <AWS_account_number> [--profile <AWS_profile>] [--duration <duration_in_seconds>] [--role <AWS_role>]
 
-# Default role name to assume
-role_to_assume="ServiceRole"
+# Initialize variables with default values
+profile="default"
+duration="900"  # Default duration is 15 minutes (900 seconds)
+role_to_assume="ServiceRole" # Default role name to assume
 
-# Use the specified AWS CLI profile if provided as an argument
-if [ $# -eq 1 ]; then
-    profile="$1"
-else
-    profile="default"  # Use the default profile if no argument provided
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --account)
+            account="$2"
+            shift 2
+            ;;
+        --profile)
+            profile="$2"
+            shift 2
+            ;;
+        --duration)
+            duration="$2"
+            shift 2
+            ;;
+        --role)
+            duration="$2"
+            shift 2
+            ;;
+        *)
+            echo "Invalid argument: $1"
+            shift 1  # Shift by 1 to consume the invalid argument and continue            
+            ;;
+    esac
+done
+
+# Check if the required account parameter is provided
+if [ -z "$account" ]; then
+    echo "Error: AWS Account Number parameter (account) is required."
+    return
 fi
-
-# Set the duration (in seconds) for the temporary credentials
-duration="${2:-900}"  # Default duration is 15 minutes (900 seconds)
 
 # Set the AWS_DEFAULT_REGION based on the selected profile or the default region
 if [ "$profile" == "default" ]; then
@@ -23,8 +47,8 @@ else
 fi
 
 # Assume the role and capture the temporary credentials
-credentials=$(aws sts assume-role --role-arn "arn:aws:iam::AWSACCOUNTNUMBER:role/$role_to_assume" \
-    --role-session-name "ServiceSession" --profile "$profile" --duration-seconds "$duration")
+credentials=$(aws sts assume-role --role-arn "arn:aws:iam::$account:role/$role_to_assume" \
+    --role-session-name "AssumeSession" --profile "$profile" --duration-seconds "$duration")
 
 # Extract the temporary credentials
 access_key=$(echo "$credentials" | jq -r '.Credentials.AccessKeyId')

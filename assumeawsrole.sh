@@ -6,6 +6,7 @@
 profile="default"
 duration="900"  # Default duration is 15 minutes (900 seconds)
 role_to_assume="AdministratorRole" # Default role name to assume
+exit_code=0  # Default exit code for success
 
 # Function to display usage information
 display_usage() {
@@ -25,6 +26,7 @@ handle_error() {
     local error_message="$1"
     echo ""
     echo "Error: $error_message"    
+    exit_code=1  # Set exit code to indicate failure
 }
 
 # Parse command-line arguments
@@ -48,7 +50,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             display_usage
-            return
+            return $exit_code
             ;;
         *)
             echo "Invalid argument: $1"
@@ -58,11 +60,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Check if the required account parameter is provided
-if [ -z "$account" ]; then
+if [ -z "$account" ]; then    
     echo "Error: AWS Account Number parameter (account) is required."
     echo ""
-    display_usage
-    return
+
+    display_usage    
+
+    exit_code=1    
+    return $exit_code
 fi
 
 # Set the AWS_DEFAULT_REGION based on the selected profile or the default region
@@ -79,7 +84,7 @@ credentials=$(aws sts assume-role --role-arn "arn:aws:iam::$account:role/$role_t
 # Check if the assume-role command encountered an error
 if [ $? -ne 0 ]; then
     handle_error "Failed to assume the role: $role_to_assume"
-    return
+    return $exit_code
 fi
 
 # Extract the temporary credentials
@@ -98,3 +103,6 @@ duration_minutes=$(python -c "print('{:.2f}'.format($duration / 60))")
 
 echo ""
 echo "Successfully assumed the role $role_to_assume for a duration of $duration_minutes minutes."
+
+# Return the exit code to indicate success or failure
+return $exit_code

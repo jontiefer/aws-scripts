@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Invalid argument: $1"
-            shift 1  # Shift by 1 to consume the invalid argument and continue            
+            shift 1 
             ;;
     esac
 done
